@@ -1,0 +1,1 @@
+ kafka-console-consumer.sh --bootstrap-server nn02.itversity.com:6667 --zookeeper nn01.itversity.com:2181,nn02.itversity.com:2181,rm01.itversity.com --topic projectTopic --from-beginning 

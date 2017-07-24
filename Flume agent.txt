@@ -1,0 +1,44 @@
+# project.conf: a multiplex agent to save one copy of data in HDFS and
+# other copy streamed to Kafka so that data can be processed by
+# streaming technologies such as Spark Streaming
+
+# Name the components on this agent
+project.sources = logsource
+project.sinks = kafkasink hdfssink
+project.channels = kafkachannel hdfschannel
+
+# Describe/configure the source
+project.sources.logsource.type = exec
+project.sources.logsource.command = tail -F /opt/gen_logs/logs/access.log
+
+# Describe the kafka sink
+project.sinks.kafkasink.type = org.apache.flume.sink.kafka.KafkaSink
+project.sinks.kafkasink.brokerList = nn01.itversity.com:6667,nn02.itversity.com:6667,rm01.itversity.com:6667
+project.sinks.kafkasink.topic = projectTopic
+
+# Describe the HDFS sink
+project.sinks.hdfssink.type = hdfs
+project.sinks.hdfssink.hdfs.path = hdfs://nn01.itversity.com:8020/user/rss161030/Stream_project/flume_example_%Y-%m-%d
+project.sinks.hdfssink.hdfs.fileType = DataStream
+project.sinks.hdfssink.hdfs.rollInterval = 120
+project.sinks.hdfssink.hdfs.rollSize = 10485760
+project.sinks.hdfssink.hdfs.rollCount = 100
+project.sinks.hdfssink.hdfs.filePrefix = retail
+project.sinks.hdfssink.hdfs.fileSuffix = .txt
+project.sinks.hdfssink.hdfs.inUseSuffix = .tmp
+project.sinks.hdfssink.hdfs.useLocalTimeStamp = true
+
+# Use a channel which buffers events in memory for kafkasink
+project.channels.kafkachannel.type = memory
+project.channels.kafkachannel.capacity = 1000
+project.channels.kafkachannel.transactionCapacity = 100
+
+# Use a channel which buffers events in file for hdfssink
+project.channels.hdfschannel.type = file
+project.channels.hdfschannel.capacity = 1000
+project.channels.hdfschannel.transactionCapacity = 100
+
+# Bind the source and sink to the channel
+project.sources.logsource.channels = hdfschannel kafkachannel
+project.sinks.kafkasink.channel = kafkachannel
+project.sinks.hdfssink.channel = hdfschannel

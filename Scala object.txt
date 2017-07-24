@@ -1,0 +1,33 @@
+/**
+  * Created by bluef4x on 7/23/2017.
+  */
+import kafka.serializer.StringDecoder
+import org.apache.spark.streaming._
+import org.apache.spark.streaming.kafka._
+import org.apache.spark.SparkConf
+import org.apache.spark.streaming.dstream.InputDStream
+object StreamingDepartmentAnalysis {
+  def main(args: Array[String]) {
+    val sparkConf = new SparkConf().
+      setAppName("DepartmentWiseCount").setMaster("yarn-client")
+    val topicsSet = "projectTopic".split(",").toSet
+    val kafkaParams =
+      Map[String, String]("metadata.broker.list" -> "nn01.itversity.com:6667,nn02.itversity.com:6667,rm01.itversity.com:6667")
+    val ssc = new StreamingContext(sparkConf, Seconds(60))
+    val messages: InputDStream[(String, String)] = KafkaUtils.
+      createDirectStream[String, String, StringDecoder, StringDecoder](
+      ssc, kafkaParams, topicsSet)
+
+    val lines = messages.map(_._2)
+    val linesFiltered = lines.filter(rec => rec.contains("GET /department/"))
+    val countByDepartment = linesFiltered.
+      map(rec => (rec.split(" ")(6).split("/")(2), 1)).
+      reduceByKey(_ + _)
+    //        reduceByKeyAndWindow((a:Int, b:Int) => (a + b), Seconds(300), Seconds(60))
+    //    countByDepartment.saveAsTextFiles(args(0))
+    // Below function call will save the data into HDFS
+    countByDepartment.saveAsTextFiles(args(0))
+    ssc.start()
+    ssc.awaitTermination()
+  }
+}

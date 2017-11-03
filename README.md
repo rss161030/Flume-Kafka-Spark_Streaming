@@ -5,3 +5,7 @@ First step:
 I created a flume agent with a source (log files) and 2 channels and 2 sinks, 1 sink is HDFS and the other sink is the kafka topic. So my Kafka
 producer is the flume sink which is being used as one of the destination for log files
 
+Second step:
+To test whether the fulme agent is running or not and kafka topic is recieving messages or not I initiated a kafka consumer
+which is publishing my log files
+
